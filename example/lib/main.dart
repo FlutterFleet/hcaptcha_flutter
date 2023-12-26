@@ -1,9 +1,8 @@
-import 'dart:developer';
-
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'package:hcaptcha_flutter/hcaptcha_flutter.dart';
 
 void main() {
@@ -20,29 +19,25 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    try {
-      await HCaptchaFlutter.show({});
-    } on PlatformException catch (e) {
-      log(e.toString());
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('HCaptcha Plugin'),
         ),
-        body: const Center(
-          child: Text('Running on'),
+        body: Center(
+          child: TextButton(
+            onPressed: () async {
+              HCaptchaFlutter.setMethodCallHandler((MethodCall call) async {
+
+              });
+              await HCaptchaFlutter.show({
+                'siteKey': 'a5f74b19-9e45-40e0-b45d-47ff91b7a6c2',
+                'language': 'en',
+              });
+            },
+            child: const Text('Show Captcha'),
+          ),
         ),
       ),
     );
