@@ -113,29 +113,8 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
     switch (call.method) {
       case METHOD_SHOW:
         HashMap<String, Object> config = (HashMap<String, Object>) call.arguments;
-        Log.i(TAG, config.toString());
         delegate.show(config, result);
         break;
-//            case METHOD_SET_DEBUG_MODE:
-//                boolean debugMode = call.argument("debugMode");
-//                delegate.setDebugMode(debugMode, result);
-//                break;
-//            case METHOD_SET_AUTH:
-//                boolean auth = call.argument("auth");
-//                delegate.setAuth(auth, result);
-//                break;
-//            case METHOD_INIT:
-//                delegate.init(result);
-//                break;
-//            case METHOD_SET_ALIAS:
-//                int sequence = call.argument("sequence");
-//                String alias = call.argument("alias");
-//                delegate.setAlias(sequence, alias, result);
-//                break;
-//            case METHOD_DELETE_ALIAS:
-//                int deleteSequence = call.argument("sequence");
-//                delegate.deleteAlias(deleteSequence, result);
-//                break;
       default:
         result.notImplemented();
     }
@@ -196,11 +175,13 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
     public void show(HashMap<String, Object> config, MethodChannel.Result result) {
       if (this.context == null) {
         Log.e(TAG, "上下文为空");
+        result.error(METHOD_SHOW, "上下文为空", null);
         return;
       }
       try {
         if (config == null) {
           Log.e(TAG, "hCaptcha配置为空");
+          result.error(METHOD_SHOW, "hCaptcha配置为空", null);
           return;
         }
 
@@ -210,6 +191,7 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
         String language = getDefaultLocale((String) config.get("language"));
         if (siteKey == null || siteKey.isEmpty()) {
           Log.e(TAG, "hCaptcha验证码配置中siteKey字段为空");
+          result.error(METHOD_SHOW, "hCaptcha验证码配置中siteKey字段为空", null);
           return;
         }
 
@@ -227,6 +209,7 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
                 }}));
               } catch (Exception e) {
                 Log.e(TAG, "parse error: " + "(" + e.getMessage() + ")");
+                channel.invokeMethod("error", e.getMessage());
               }
             }, 100);
           }).addOnFailureListener(e -> {
@@ -241,6 +224,7 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
                 }}));
               } catch (Exception e1) {
                 Log.e(TAG, "parse error: " + "(" + e1.getMessage() + ")");
+                channel.invokeMethod("error", e.getMessage());
               }
             }, 100);
           }).addOnOpenListener(() -> Toast.makeText(this.getActivity(), "hCaptcha shown", Toast.LENGTH_SHORT).show());
