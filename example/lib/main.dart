@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -29,7 +28,9 @@ class _MyAppState extends State<MyApp> {
           child: TextButton(
             onPressed: () async {
               HCaptchaFlutter.setMethodCallHandler((MethodCall call) async {
-
+                if (kDebugMode) {
+                  print('method: ${call.method}, arguments: ${call.arguments}');
+                }
               });
               await HCaptchaFlutter.show({
                 'siteKey': 'a5f74b19-9e45-40e0-b45d-47ff91b7a6c2',

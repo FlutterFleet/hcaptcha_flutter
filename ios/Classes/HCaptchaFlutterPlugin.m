@@ -1,5 +1,7 @@
 #import "HCaptchaFlutterPlugin.h"
 
+NSString * const FlutterMethodCallBadRequest = @"FlutterMethodCallBadRequest";
+
 @interface HCaptchaFlutterPlugin () <UIGestureRecognizerDelegate>
 
 @property(strong, readonly) FlutterMethodChannel *channel;
@@ -32,12 +34,14 @@
   if ([@"show" isEqualToString:call.method]) {
     id arguments = call.arguments;
     if (arguments == nil) {
-      NSLog(@"hCaptcha配置为空");
+      NSLog(@"HCaptcha配置为空");
+      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha配置为空" details:nil]);
       return;
     }
 
     if (![arguments isKindOfClass: NSMutableDictionary.class]) {
-      NSLog(@"hCaptcha配置必须为字典类型");
+      NSLog(@"HCaptcha配置必须为字典类型");
+      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha配置必须为字典类型" details:nil]);
       return;
     }
 
@@ -45,12 +49,13 @@
     id siteKey = [config objectForKey:@"siteKey"];
     id language = [config objectForKey:@"language"];
     if (siteKey == nil || [@"" isEqualToString:siteKey]) {
-      NSLog(@"hCaptcha验证码配置中siteKey字段为空");
+      NSLog(@"HCaptcha验证码配置中siteKey字段为空");
+      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha验证码配置中siteKey字段为空" details:nil]);
       return;
     }
 
     if (language == nil || [@"" isEqualToString:language]) {
-      NSLog(@"hCaptcha验证码配置中language字段为空");
+      NSLog(@"HCaptcha验证码配置中language字段为空");
       language = @"en";
     }
 
@@ -105,8 +110,8 @@
     }];
 
     [self.hCaptcha onEvent:^(enum HCaptchaEvent event, id _Nullable _) {
-      NSLog(@"event: %ld", event);
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      NSLog(@"HCaptcha: event=%ld", event);
+      dispatch_async(dispatch_get_main_queue(), ^{
         if (event == HCaptchaEventOpen) {
           [activityIndicator stopAnimating];
           [self.channel invokeMethod: @"open" arguments: nil];
@@ -121,30 +126,16 @@
       [self.hCaptcha reset];
       NSError *error = nil;
       NSString *token = [result dematerializeAndReturnError: &error];
-      NSLog(@"DONE token:%@, error:%@", token, [error description]);
-      if (error == nil) {
-        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithObject: token forKey: @"token"];
-        NSData *data;
-        if (@available(iOS 13.0, *)) {
-          data = [NSJSONSerialization dataWithJSONObject:dict options: NSJSONWritingWithoutEscapingSlashes error:nil];
+      NSLog(@"HCaptcha: token=%@, error=%@", token, [error description]);
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if (error == nil) {
+          NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithObject: token forKey: @"token"];
+          [self.channel invokeMethod: @"success" arguments: dict];
         } else {
-          // Fallback on earlier versions
-          data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+          NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithObject: [error description] forKey: @"error"];
+          [self.channel invokeMethod: @"error" arguments: dict];
         }
-        NSString* response = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        [self.channel invokeMethod: @"success" arguments: response];
-      } else {
-        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithObject: [error description] forKey: @"error"];
-        NSData *data;
-        if (@available(iOS 13.0, *)) {
-          data = [NSJSONSerialization dataWithJSONObject:dict options: NSJSONWritingWithoutEscapingSlashes error:nil];
-        } else {
-          // Fallback on earlier versions
-          data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
-        }
-        NSString* response = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        [self.channel invokeMethod: @"error" arguments: response];
-      }
+      });
 
       [self.webView removeFromSuperview];
       [self.overlayView removeFromSuperview];
