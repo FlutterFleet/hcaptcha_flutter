@@ -6,18 +6,19 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.FragmentActivity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hcaptcha.sdk.HCaptcha;
 import com.hcaptcha.sdk.HCaptchaConfig;
 import com.hcaptcha.sdk.HCaptchaError;
 import com.hcaptcha.sdk.HCaptchaSize;
+
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 
@@ -173,61 +174,49 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
      */
     @Override
     public void show(HashMap<String, Object> config, MethodChannel.Result result) {
-      if (this.context == null) {
-        Log.e(TAG, "上下文为空");
-        result.error(METHOD_SHOW, "上下文为空", null);
+      if (ObjectUtils.isEmpty(this.context)) {
+        Log.e(TAG, "HCaptcha上下文为空");
+        result.error(METHOD_SHOW, "HCaptcha上下文为空", null);
         return;
       }
       try {
-        if (config == null) {
-          Log.e(TAG, "hCaptcha配置为空");
-          result.error(METHOD_SHOW, "hCaptcha配置为空", null);
+        if (ObjectUtils.isEmpty(config)) {
+          Log.e(TAG, "HCaptcha配置为空");
+          result.error(METHOD_SHOW, "HCaptcha配置为空", null);
           return;
         }
 
         Log.i(TAG, config.toString());
 
         String siteKey = (String) config.get("siteKey");
-        String language = getDefaultLocale((String) config.get("language"));
-        if (siteKey == null || siteKey.isEmpty()) {
-          Log.e(TAG, "hCaptcha验证码配置中siteKey字段为空");
-          result.error(METHOD_SHOW, "hCaptcha验证码配置中siteKey字段为空", null);
+        String language = StringUtils.defaultIfEmpty((String) config.get("language"), "en");
+        if (StringUtils.isEmpty(siteKey)) {
+          Log.e(TAG, "HCaptcha验证码配置中siteKey字段为空");
+          result.error(METHOD_SHOW, "HCaptcha验证码配置中siteKey字段为空", null);
           return;
         }
 
-        if (hCaptcha == null) {
+        if (ObjectUtils.isEmpty(hCaptcha)) {
           hCaptcha = HCaptcha.getClient((FragmentActivity) getActivity()).verifyWithHCaptcha(getConfig(siteKey, language));
           hCaptcha.addOnSuccessListener(response -> {
             String token = response.getTokenResult();
-            Log.i(TAG, "hCaptcha success: " + "(" + token + ")");
+            Log.i(TAG, "HCaptcha success: token=" + token);
             Handler mainHandler = new Handler(Looper.getMainLooper());
-            ObjectMapper objectMapper = new ObjectMapper();
             mainHandler.postDelayed(() -> {
-              try {
-                channel.invokeMethod("success", objectMapper.writeValueAsString(new HashMap(){{
-                  put("token", token);
-                }}));
-              } catch (Exception e) {
-                Log.e(TAG, "parse error: " + "(" + e.getMessage() + ")");
-                channel.invokeMethod("error", e.getMessage());
-              }
+              HashMap<String, Object> data = new HashMap<>();
+              data.put("token", token);
+              channel.invokeMethod("success", data);
             }, 100);
           }).addOnFailureListener(e -> {
-            Log.e(TAG, "hCaptcha failed: " + "(" + e.getStatusCode() + ")" + e.getMessage());
+            Log.e(TAG, "HCaptcha failed: code=" + e.getStatusCode() + ", msg=" + e.getMessage());
             Handler mainHandler = new Handler(Looper.getMainLooper());
-            ObjectMapper objectMapper = new ObjectMapper();
             mainHandler.postDelayed(() -> {
-              try {
-                channel.invokeMethod("error", objectMapper.writeValueAsString(new HashMap(){{
-                  put("code", e.getStatusCode());
-                  put("msg", e.getMessage());
-                }}));
-              } catch (Exception e1) {
-                Log.e(TAG, "parse error: " + "(" + e1.getMessage() + ")");
-                channel.invokeMethod("error", e.getMessage());
-              }
+              HashMap<String, Object> data = new HashMap<>();
+              data.put("code", e.getStatusCode());
+              data.put("msg", e.getMessage());
+              channel.invokeMethod("error", data);
             }, 100);
-          }).addOnOpenListener(() -> Toast.makeText(this.getActivity(), "hCaptcha shown", Toast.LENGTH_SHORT).show());
+          });
         } else {
           hCaptcha.verifyWithHCaptcha();
         }
@@ -250,10 +239,6 @@ public class HCaptchaFlutterPlugin implements FlutterPlugin, MethodChannel.Metho
               .diagnosticLog(true)
               .retryPredicate((config, exception) -> exception.getHCaptchaError() == HCaptchaError.SESSION_TIMEOUT)
               .build();
-    }
-
-    private String getDefaultLocale(String val) {
-      return val == null || val.isEmpty() ? "en" : val;
     }
   }
 }
