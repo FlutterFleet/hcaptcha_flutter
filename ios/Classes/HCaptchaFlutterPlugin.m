@@ -1,6 +1,6 @@
 #import "HCaptchaFlutterPlugin.h"
 
-NSString * const FlutterMethodCallBadRequest = @"FlutterMethodCallBadRequest";
+NSString * const HFlutterMethodCallBadRequest = @"HFlutterMethodCallBadRequest";
 
 @interface HCaptchaFlutterPlugin () <UIGestureRecognizerDelegate>
 
@@ -35,13 +35,13 @@ NSString * const FlutterMethodCallBadRequest = @"FlutterMethodCallBadRequest";
     id arguments = call.arguments;
     if (arguments == nil) {
       NSLog(@"HCaptcha配置为空");
-      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha配置为空" details:nil]);
+      result([FlutterError errorWithCode:HFlutterMethodCallBadRequest message:@"HCaptcha配置为空" details:nil]);
       return;
     }
 
     if (![arguments isKindOfClass: NSMutableDictionary.class]) {
       NSLog(@"HCaptcha配置必须为字典类型");
-      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha配置必须为字典类型" details:nil]);
+      result([FlutterError errorWithCode:HFlutterMethodCallBadRequest message:@"HCaptcha配置必须为字典类型" details:nil]);
       return;
     }
 
@@ -50,7 +50,7 @@ NSString * const FlutterMethodCallBadRequest = @"FlutterMethodCallBadRequest";
     id language = [config objectForKey:@"language"];
     if (siteKey == nil || [@"" isEqualToString:siteKey]) {
       NSLog(@"HCaptcha验证码配置中siteKey字段为空");
-      result([FlutterError errorWithCode:FlutterMethodCallBadRequest message:@"HCaptcha验证码配置中siteKey字段为空" details:nil]);
+      result([FlutterError errorWithCode:HFlutterMethodCallBadRequest message:@"HCaptcha验证码配置中siteKey字段为空" details:nil]);
       return;
     }
 
