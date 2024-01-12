@@ -31,6 +31,11 @@ class _MyAppState extends State<MyApp> {
                 if (kDebugMode) {
                   print('method: ${call.method}, arguments: ${call.arguments}');
                 }
+
+                if (call.method == 'success' && call.arguments != null) {
+                  final res = call.arguments as Map<dynamic, dynamic>;
+                  final token = res['token'] as String?;
+                }
               });
               await HCaptchaFlutter.show({
                 'siteKey': 'a5f74b19-9e45-40e0-b45d-47ff91b7a6c2',
