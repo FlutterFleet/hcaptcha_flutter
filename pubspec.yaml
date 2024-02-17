@@ -1,7 +1,8 @@
 name: hcaptcha_flutter
 description: "HCaptcha for Flutter."
 version: 0.0.1
-homepage:
+homepage: https://www.kjxbyz.com/flutterfleet
+repository: https://github.com/FlutterFleet/hcaptcha_flutter
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
